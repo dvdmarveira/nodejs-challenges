@@ -1,6 +1,8 @@
 // const http = require('http') // CommonJS => require
 import http from "node:http"; // ESModules => import/export
+import { randomUUID } from "node:crypto";
 import { json } from "./middlewares/json.js";
+import { Database } from "./database.js";
 // import fastify from 'fastify'
 
 // Criar um usuário (name, email, password)
@@ -30,7 +32,7 @@ import { json } from "./middlewares/json.js";
 // Porta de entrada > req, stdin
 // Porta de saída > res, stdout
 
-const users = [];
+const database = new Database();
 
 const server = http.createServer(async (req, res) => {
   const { method, url } = req;
@@ -38,6 +40,7 @@ const server = http.createServer(async (req, res) => {
   await json(req, res);
 
   if (method === "GET" && url === "/users") {
+    const users = database.select("users");
     // Early return
     return res.end(JSON.stringify(users)); // Utilizar JSON (JavaScript Object Notation) para converter array em string
   }
@@ -46,11 +49,13 @@ const server = http.createServer(async (req, res) => {
   if (method === "POST" && url === "/users") {
     const { name, email } = req.body;
 
-    users.push({
-      id: 1,
+    const user = {
+      id: randomUUID(),
       name,
       email,
-    });
+    };
+
+    database.insert("users", user);
 
     return res.writeHead(201).end();
   }

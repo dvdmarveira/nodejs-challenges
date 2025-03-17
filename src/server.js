@@ -1,8 +1,9 @@
 // const http = require('http') // CommonJS => require
 import http from "node:http"; // ESModules => import/export
-import { randomUUID } from "node:crypto";
+
 import { json } from "./middlewares/json.js";
-import { Database } from "./database.js";
+import { routes } from "./routes.js";
+
 // import fastify from 'fastify'
 
 // Criar um usuário (name, email, password)
@@ -32,32 +33,17 @@ import { Database } from "./database.js";
 // Porta de entrada > req, stdin
 // Porta de saída > res, stdout
 
-const database = new Database();
-
 const server = http.createServer(async (req, res) => {
   const { method, url } = req;
 
   await json(req, res);
 
-  if (method === "GET" && url === "/users") {
-    const users = database.select("users");
-    // Early return
-    return res.end(JSON.stringify(users)); // Utilizar JSON (JavaScript Object Notation) para converter array em string
-  }
+  const route = routes.find((route) => {
+    return route.method === method && route.path === url;
+  });
 
-  // Por ser uma aplicação STATEFUL, é necessário rodar no terminal "http POST localhost:3333/users" após a criação de um novo usuário
-  if (method === "POST" && url === "/users") {
-    const { name, email } = req.body;
-
-    const user = {
-      id: randomUUID(),
-      name,
-      email,
-    };
-
-    database.insert("users", user);
-
-    return res.writeHead(201).end();
+  if (route) {
+    return route.handler(req, res);
   }
 
   return res.writeHead(404).end();

@@ -33,16 +33,36 @@ import { routes } from "./routes.js";
 // Porta de entrada > req, stdin
 // Porta de saída > res, stdout
 
+// Query Parameters: URL STATEFUL => Filtros, paginação, não-obrigatórios
+// Route Parameteres: Identificação de recurso
+// Request Body: Envio de informações de um formulário (HTTPs)
+
+// http://localhost:3333/users?userId=1&name=Dvd
+
+// GET http://localhost:3333/users/1
+// DELETE http://localhost:3333/users/1
+
+// POST http://localhost:3333/users
+
+// Criar rotas de Edição e remoção
+// Rota de remoção > Route Parameteres
+
 const server = http.createServer(async (req, res) => {
   const { method, url } = req;
 
   await json(req, res);
 
   const route = routes.find((route) => {
-    return route.method === method && route.path === url;
+    return route.method === method && route.path.test(url);
   });
 
   if (route) {
+    const routeParams = req.url.match(route.path);
+
+    const params = { ...routeParams.groups };
+
+    req.params = { ...routeParams.groups };
+
     return route.handler(req, res);
   }
 
